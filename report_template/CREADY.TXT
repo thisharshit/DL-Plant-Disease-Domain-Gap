@@ -1,0 +1,74 @@
+---ELECTRONIC LETTERS ON COMPUTER VISION AND IMAGE ANALYSIS (ELCVIA)---
+                    *** CAMERA READY VERSION  ***
+
+
+When your article is accepted, ELCVIA Board will give you
+the following information which you must fill to make 
+the Camera  Ready version:
+
+
+* LATEX 2e, LATEX 2.09 VERSIONS:
+
+    1) Volume, Number, Initial and Final pages, Year
+
+In the beginning of sample Latex Document you can find the
+following instructions:
+% INFORMATION TO FILL IN CAMERA READY VERSION
+%-------------------------------------------------------------------
+\newcommand{\vol}{0}            % Number of Volume (default 0)
+\newcommand{\num}{0}            % Number (default 0)
+\setcounter{page}{1}            % First page (default 1)
+\newcommand{\begpag}{\thepage}  
+\newcommand{\finpag}{7}         % Last Page
+\newcommand{\yearp}{2000}       % Year of the issue (default 2000)
+%-------------------------------------------------------------------
+
+
+    2) Name of Associate Editor of your article (Initial surname and Name)
+
+In the beginning of sample Latex Document you can find the
+following instructions:
+% INFORMATION TO FILL IN CAMERA READY VERSION
+%--------------------------------------------------------------------
+% name of Associate Editor given when article is accepted
+\footnote[0]{\noindent Recommended for acceptance by $<$name$>$} 
+%--------------------------------------------------------------------
+
+
+    3) Received, revision (optional) and accepted dates.
+
+In the beginning of sample Latex Document you can find the
+following instructions:
+% INFORMATION TO FILL IN CAMERA READY VERSION
+%------------------------------------------------------------------
+% Received, revised and accepted dates
+\centerline{\small Received 1 January 2000; revised 1 January 2000; 
+accepted 1 January 2000}
+
+You must insert the name given by ELCVIA board in format initial surname
+and name (example: E. Marti)
+
+
+
+* WORD VERSION: You must change in .doc file
+
+   1) Volume, Number, Initial and Final pages, Year
+
+   2) Name of Associate Editor of your article (Initial surname and Name)
+You must insert the name given by ELCVIA board in format initial surname
+and name (example: E. Marti)
+
+   3) Received, revision (optional) and accepted dates.
+
+
+* LATEX and WORD versions:
+
+You can insert some footnotes in the first page after the "Correspondence to"
+footnote but before "Recommended for acceptance...".
+
+
+For any questions, problems or coments send an E-mail to: 
+elcvia@cvc.uab.es with subject: 'Article Formats'.
+
+
+                             Bellaterra, SEPTEMBER 2002

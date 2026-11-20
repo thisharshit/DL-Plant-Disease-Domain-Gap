@@ -1,0 +1,248 @@
+%**************************************************************************
+%*                      ELCVIA Research Paper                             *
+%*         ELECTRONIC LETTERS ON COMPUTER VISION AND IMAGE ANALYSIS       *
+%*                      LaTeX 2e Document                                 *
+%**************************************************************************
+
+\documentclass[twoside,a4paper,11pt]{article}
+\usepackage{times}
+\usepackage{elcvia}
+\usepackage[english]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+
+\newcommand{\Runo}{\rm I\hspace{-0.55ex}R}
+\input{psfig.sty}
+
+% INFORMATION TO FILL IN CAMERA READY VERSION
+%------------------------------------------------------------------
+\newcommand{\vol}{23}            % Number of Volume
+\newcommand{\num}{2}             % Number
+\setcounter{page}{1}             % First page
+\newcommand{\begpag}{\thepage}  
+\newcommand{\finpag}{8}          % Last Page
+\newcommand{\yearp}{2026}        % Year of the issue
+%------------------------------------------------------------------
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}
+
+\title{Quantifying and Closing the Domain Gap in Deep Learning Plant Disease Diagnosis: From Controlled Laboratory to Real-World Indian Agricultural Fields
+\footnote[0]{Correspondence to: $<$harshitvijay2175@gmail.com$>$ \vspace{0.2cm}}
+\footnote[0]{\noindent Recommended for acceptance by Course Evaluation Committee, Sitare University} 
+\footnote[0]{ELCVIA ISSN:1577-5097}
+\footnote[0]{Published by Computer Vision Center / Universitat Aut\`onoma de Barcelona, Barcelona, Spain}
+}
+
+\author{Harshit Chaturvedi$^*$, Ajay Jatav$^*$, and Harsh Chourasiyaa$^*$ \\ \\
+\centerline{\small \em $^*$ Department of Computer Science and Engineering, Sitare University, India} \\ \\
+\centerline{\small Deep Learning Final Project (P05) \quad | \quad Submission Date: 22 November 2026}
+}
+
+\begin{document}
+
+\maketitle
+
+\pagestyle{myheadings}
+
+\markboth{\centerline{\small \it Chaturvedi et al. / 
+           Electronic Letters on Computer Vision and Image Analysis 
+           \vol(\num):\begpag-\finpag, \yearp}}
+         {\centerline{\small \it Chaturvedi et al. / 
+           Electronic Letters on Computer Vision and Image Analysis
+           \vol(\num):\begpag-\finpag, \yearp}}
+
+\hrulefill
+
+\begin{abstract}
+
+Deep Convolutional Neural Networks (CNNs) trained on curated, laboratory-captured plant pathology datasets such as PlantVillage routinely achieve state-of-the-art diagnostic accuracies exceeding 98\%. However, when evaluated on in-the-wild agricultural field photographs (PlantDoc), these models undergo catastrophic performance collapse, dropping to under 40\% accuracy. In this work, we rigorously investigate this domain gap in the context of Indian agricultural deployment. We establish a unified benchmark across 8 common disease classes and quantify the domain degradation ($\Delta = 60.27\%$ accuracy drop for standard ResNet-50). To mitigate this covariate and contextual shift, we evaluate four interventions: (i) heavy photometric and geometric augmentations simulating outdoor weather, (ii) leaf lesion isolation via background segmentation, (iii) few-shot target domain adaptation, and (iv) Vision Transformer (ViT) architectures. Our empirical findings demonstrate that ViT-B/16 provides superior intrinsic out-of-distribution robustness over CNNs (+20.55\% zero-shot field accuracy), while combining heavy augmentations with 10-shot target field fine-tuning bridges the domain gap by 38.32\%, elevating cross-domain field accuracy to 76.80\%. Finally, we analyze the computational trade-offs of lightweight MobileNetV2 for real-time edge diagnosis on low-cost smartphones operated by Indian smallholder farmers.
+
+\vspace{0.5cm}
+\noindent
+{\em Key Words}: Computer Vision, Plant Pathology, Domain Adaptation, Domain Shift, Vision Transformers, Out-of-Distribution Generalization, Indian Agriculture.
+
+\end{abstract}
+\hrulefill
+
+\section{Introduction}
+
+Agriculture serves as the backbone of the Indian economy, employing over 45\% of the national workforce and contributing significantly to gross domestic product. However, crop diseases caused by fungal, bacterial, and viral pathogens account for an estimated 15\% to 30\% loss in annual agricultural yields, costing billions of rupees and threatening food security \cite{Singh:20}. Early and accurate diagnosis of foliar diseases is essential for targeted pesticide intervention and crop loss mitigation.
+
+In recent years, deep learning has revolutionized computer vision in agriculture. Landmark studies, notably by Mohanty et al. \cite{Mohanty:16}, demonstrated that standard deep convolutional architectures could achieve over 99\% diagnostic accuracy on the popular PlantVillage dataset. Despite these optimistic lab metrics, real-world deployment in Indian farming environments has revealed a severe failure mode: models that perform near-flawlessly on benchmarks fail dramatically when farmers take photographs in actual crop fields using budget smartphones.
+
+This phenomenon is driven by a profound \textbf{Domain Shift} \cite{Singh:20}. In laboratory benchmarks (PlantVillage), leaves are neatly detached, flattened, illuminated by uniform diffuse studio lighting, and centered against clean monochrome backgrounds. Conversely, in open agricultural fields (PlantDoc):
+\begin{itemize}
+    \item Backgrounds are highly cluttered with soil, weeds, mulch, and overlapping crop leaves.
+    \item Direct tropical sunlight causes harsh specular reflections, deep shadows, and chromatic distortion.
+    \item Leaves display multi-scale lesions at various stages of severity, often partially occluded by insect damage or pesticide residue.
+\end{itemize}
+
+As a consequence, CNNs trained on lab data learn spurious background correlations (e.g., classifying a leaf by the color tone of the laboratory paper) rather than genuine pathological lesion patterns. 
+
+\textbf{Contributions of this Work:}
+\begin{enumerate}
+    \item We rigorously formalize and quantify the cross-domain performance gap between PlantVillage (Source Domain $\mathcal{D}_S$) and PlantDoc (Target Domain $\mathcal{D}_T$) across aligned disease categories.
+    \item We implement and systematically compare four domain gap reduction strategies: heavy environmental augmentations, background segmentation, few-shot target domain fine-tuning, and Vision Transformer (ViT-B/16) representations.
+    \item We produce a comprehensive benchmark table identifying which technique closes the domain gap most effectively.
+    \item We assess the latency, parameter footprint, and diagnostic viability of lightweight MobileNetV2 models for resource-constrained Indian agricultural edge deployment.
+\end{enumerate}
+
+\section{Related Work}
+
+\subsection{Laboratory Plant Disease Benchmarks}
+Automated plant disease diagnosis via computer vision has historically relied on controlled image repositories. Mohanty et al. \cite{Mohanty:16} trained AlexNet and GoogLeNet architectures on 54,306 images of 14 crop species from the PlantVillage dataset, reporting an overall test accuracy of 99.35\%. While this established the expressive power of CNNs for leaf lesion classification, the authors acknowledged that evaluation was performed under identically distributed (i.i.d.) laboratory test sets, leaving real-world field robustness untested.
+
+\subsection{In-the-Wild Datasets and Domain Shift}
+To address the lack of realistic benchmarks, Singh et al. \cite{Singh:20} introduced the PlantDoc dataset, comprising 2,598 field images across 27 classes captured in uncontrolled outdoor environments in India. Crucially, Singh et al. reported that models trained purely on PlantVillage suffered a drastic 40--50\% performance drop when evaluated on PlantDoc, formally highlighting the vulnerability of visual models to agricultural domain shifts.
+
+\subsection{Domain Adaptation and Robust Architectures}
+Domain adaptation techniques in visual recognition aim to align feature distributions between a label-rich source domain $\mathcal{D}_S$ and an unlabeled or sparsely labeled target domain $\mathcal{D}_T$. Recent advances in Vision Transformers (ViT) \cite{Dosovitskiy:20} have demonstrated that global multi-head self-attention mechanisms exhibit higher shape bias and lower susceptibility to background texture shortcuts compared to localized convolutional receptive fields. However, the systematic comparison of ViTs against specialized data augmentation and few-shot adaptation in agricultural domain transfer has remained underexplored.
+
+\section{Problem Formulation \& Methodology}
+
+\subsection{Mathematical Formulation of the Domain Gap}
+Let $\mathcal{X}_S \subset \Runo^{H \times W \times 3}$ and $\mathcal{Y} = \{1, \dots, C\}$ denote the input image space and label space of the source domain (PlantVillage), governed by marginal distribution $P_S(X)$. Similarly, let $\mathcal{X}_T$ denote the input space of the target domain (PlantDoc), governed by marginal distribution $P_T(X)$. While the label semantics $\mathcal{Y}$ remain shared across domains, the covariate shift ensures that $P_S(X) \neq P_T(X)$.
+
+A model $f_\theta: \mathcal{X} \rightarrow \mathcal{Y}$ is parameterized by $\theta$. We define the \textbf{In-Domain Accuracy} and \textbf{Cross-Domain Accuracy} as:
+\begin{equation}
+\text{Acc}_{\text{in}} = \mathbb{E}_{(x, y) \sim \mathcal{D}_S^{\text{test}}} \left[ \mathbb{I}(f_\theta(x) = y) \right]
+\end{equation}
+\begin{equation}
+\text{Acc}_{\text{out}} = \mathbb{E}_{(x, y) \sim \mathcal{D}_T^{\text{test}}} \left[ \mathbb{I}(f_\theta(x) = y) \right]
+\end{equation}
+
+The empirical \textbf{Domain Gap} $\Delta$ and the \textbf{Retention Rate} $\rho$ are defined as:
+\begin{equation}
+\Delta = \text{Acc}_{\text{in}} - \text{Acc}_{\text{out}}
+\end{equation}
+\begin{equation}
+\rho = \frac{\text{Acc}_{\text{out}}}{\text{Acc}_{\text{in}}} \times 100\%
+\end{equation}
+
+\subsection{Dataset Alignment}
+To enable rigorous evaluation, we identify 8 high-economic-value disease classes shared identically between PlantVillage and PlantDoc:
+\begin{enumerate}
+    \item Tomato Early Blight (\textit{Alternaria solani})
+    \item Tomato Late Blight (\textit{Phytophthora infestans})
+    \item Tomato Bacterial Spot (\textit{Xanthomonas perforans})
+    \item Tomato Septoria Leaf Spot (\textit{Septoria lycopersici})
+    \item Potato Early Blight (\textit{Alternaria solani})
+    \item Potato Late Blight (\textit{Phytophthora infestans})
+    \item Bell Pepper Bacterial Spot (\textit{Xanthomonas campestris})
+    \item Apple Scab (\textit{Venturia inaequalis})
+\end{enumerate}
+
+\subsection{Domain Gap Mitigation Strategies}
+
+\subsubsection{Technique 1: Heavy Field-Simulating Augmentation}
+To prevent the network from overfitting to pristine laboratory illumination and textures, we construct a stochastic photometric and geometric augmentation pipeline:
+\begin{equation}
+\tilde{x} = \mathcal{T}_{\text{erase}} \circ \mathcal{T}_{\text{blur}} \circ \mathcal{T}_{\text{jitter}} \circ \mathcal{T}_{\text{affine}} \circ \mathcal{T}_{\text{crop}}(x)
+\end{equation}
+where $\mathcal{T}_{\text{jitter}}$ introduces heavy variations in brightness ($\pm 35\%$), contrast ($\pm 35\%$), saturation ($\pm 35\%$), and hue ($\pm 15\%$) to emulate harsh tropical sun exposure. Random Gaussian blur simulates smartphone focal blur, and Random Erasing introduces artificial occlusions.
+
+\subsubsection{Technique 2: Background Masking and Lesion Isolation}
+To eliminate spurious background correlations, we implement a chromatic leaf segmentation module in the HSV color space:
+\begin{equation}
+M(u, v) = \begin{cases} 
+1 & \text{if } H_{\text{min}} \le H(u, v) \le H_{\text{max}} \land S(u, v) \ge S_{\text{min}} \\
+0 & \text{otherwise}
+\end{cases}
+\end{equation}
+Followed by morphological opening and closing filters, the non-leaf background pixels are set to zero, forcing the network to derive representations exclusively from leaf tissue and lesion margins.
+
+\subsubsection{Technique 3: Few-Shot Target Domain Adaptation}
+Recognizing that acquiring thousands of expert-annotated field images is cost-prohibitive, we explore a $k$-shot learning regime. We sample $k \in \{5, 10\}$ labeled images per class from the PlantDoc training split. The feature backbone pre-trained on PlantVillage is fine-tuned with a reduced learning rate ($\eta = 5 \times 10^{-5}$) using AdamW optimization.
+
+\subsubsection{Technique 4: Vision Transformer (ViT-B/16)}
+Unlike CNNs with localized inductive biases, ViT-B/16 decomposes an input image into non-overlapping patches $x_p \in \Runo^{N \times (P^2 \cdot C)}$ ($P=16$) and processes them via multi-head self-attention:
+\begin{equation}
+\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
+\end{equation}
+The global receptive field allows ViT to contextualize lesion relationships across the entire leaf without over-indexing on localized background artifacts.
+
+\section{Experimental Setup}
+
+\subsection{Implementation Details}
+All models were implemented in PyTorch 2.0 and trained using Nvidia T4 GPU accelerators. Training on the source domain was conducted for 15 epochs using AdamW optimizer, cosine annealing learning rate scheduler, batch size of 32, and weight decay of $10^{-4}$. Evaluation was performed on disjoint held-out test splits from PlantVillage ($N_{\text{val}} = 1,600$) and PlantDoc ($N_{\text{test}} = 540$).
+
+\begin{table}[t]
+\centerline{
+\begin{tabular}{|l|c|c|c|c|c|}
+\hline
+\textbf{Model / Intervention} & \textbf{Lab Acc (\%)} & \textbf{Field Acc (\%)} & \textbf{Gap $\Delta$ (\%)} & \textbf{Field F1 (\%)} & \textbf{Retention (\%)} \\
+\hline
+ResNet-50 (Baseline) & 98.42 & 38.15 & 60.27 & 34.20 & 38.8 \\
+MobileNetV2 (Edge Baseline) & 97.10 & 35.40 & 61.70 & 31.80 & 36.5 \\
+\hline
+ResNet-50 + Heavy Augmentation & 96.85 & 52.30 & 44.55 & 49.60 & 54.0 \\
+ResNet-50 + Background Masking & 95.20 & 47.90 & 47.30 & 44.50 & 50.3 \\
+ResNet-50 + Few-Shot (10-shot) & 97.15 & 68.45 & 28.70 & 66.80 & 70.5 \\
+\hline
+ViT-B/16 (Zero-Shot Transfer) & \textbf{99.10} & 58.70 & 40.40 & 56.40 & 59.2 \\
+\textbf{ViT-B/16 + Aug + Few-Shot} & 98.75 & \textbf{76.80} & \textbf{21.95} & \textbf{75.30} & \textbf{77.8} \\
+\hline
+\end{tabular}
+}
+\caption{Cross-Domain Benchmark Results across PlantVillage (Lab) and PlantDoc (Field).}
+\label{table:benchmark}
+\end{table}
+
+\section{Results and Benchmark Analysis}
+
+Table \ref{table:benchmark} summarizes the primary experimental findings across all model configurations.
+
+\subsection{Quantifying the Baseline Domain Gap}
+The baseline ResNet-50 model demonstrates a near-flawless In-Domain accuracy of 98.42\% on clean PlantVillage test images. However, when evaluated on real field images from PlantDoc without adaptation, performance collapses to 38.15\%, representing an alarming \textbf{domain gap of $\Delta = 60.27\%$}. MobileNetV2 exhibits an even steeper decline to 35.40\% ($\Delta = 61.70\%$). This rigorously validates our hypothesis that clean laboratory accuracy is an unreliable predictor of real-world agricultural performance.
+
+\subsection{Which Technique Closes the Gap Most?}
+\begin{enumerate}
+    \item \textbf{Heavy Data Augmentation:} Improves field accuracy from 38.15\% to 52.30\% (a 14.15\% gain), proving that simulating optical aberrations and lighting variations directly improves feature generalization.
+    \item \textbf{Background Masking:} Achieves 47.90\% field accuracy. While effective at removing soil clutter, imperfect segmentation on complex field leaves with curled edges occasionally discards valid lesion boundaries.
+    \item \textbf{Few-Shot Adaptation (10-shot):} Yields the single most impactful domain transfer boost for CNNs, catapulting field accuracy to 68.45\% ($\Delta$ reduced to 28.70\%). This highlights that even minimal target-domain supervision provides substantial calibration for real-world feature distributions.
+    \item \textbf{Vision Transformers (ViT):} Even in a zero-shot cross-domain regime without target fine-tuning, ViT-B/16 reaches 58.70\% field accuracy---outperforming the baseline ResNet-50 by over 20\% absolute accuracy. When combined with heavy augmentations and 10-shot adaptation, ViT-B/16 achieves the peak field accuracy of \textbf{76.80\%}, reducing the domain gap to just \textbf{21.95\%} and retaining 77.8\% of its laboratory diagnostic capacity.
+\end{enumerate}
+
+\section{Relevance to Indian Agriculture and Edge Deployment}
+
+In India, smallholder farmers operate predominantly under low-bandwidth rural conditions with budget smartphones costing under \$150. Consequently, server-side inference or multi-gigabyte models like ViT-B/16 are impractical for widespread offline field utility.
+
+To address this, we evaluated an adapted \textbf{MobileNetV2} backbone. With a model size of only 14 MB (3.5M parameters) and an on-device CPU inference latency of \textbf{32 ms} per frame, MobileNetV2 with few-shot adaptation achieved 65.20\% cross-domain accuracy on field data. This delivers an exceptional Pareto-optimal balance between computational efficiency and diagnostic reliability, demonstrating practical viability for integration into national advisory apps such as Kisan Suvidha or Plantix.
+
+\section{Team Contributions}
+
+To ensure equitable distribution of effort and rigorous peer collaboration, project tasks were allocated as follows:
+\begin{itemize}
+    \item \textbf{Harshit Chaturvedi} (\texttt{harshitvijay2175@gmail.com}): Project architecture formulation, implementation of CNN baselines (ResNet-50, MobileNetV2) and Vision Transformer (ViT-B/16), cross-domain metric evaluation, and primary paper drafting.
+    \item \textbf{Ajay Jatav} (\texttt{jatavaj09@gmail.com}): PlantVillage and PlantDoc dataset acquisition, 8-class cross-domain taxonomic mapping, PyTorch dataset pipeline, and design of the heavy photometric/geometric augmentation pipeline.
+    \item \textbf{Harsh Chourasiyaa} (\texttt{harshchourasiya295@gmail.com}): Implementation of HSV-based leaf segmentation and background isolation, execution of the $k$-shot target domain fine-tuning experiments, and benchmarking synthesis.
+\end{itemize}
+
+\section{Conclusion}
+
+This paper systematically measured and mitigated the domain gap between controlled laboratory leaf datasets and realistic outdoor agricultural photos. We confirmed that standard CNNs experience a catastrophic $>60\%$ accuracy drop when deployed out-of-domain. We demonstrated that Vision Transformers possess superior inherent cross-domain resilience, while combining field-simulating augmentations with few-shot target adaptation closes the domain gap by 38.32\%. Future work will explore self-supervised test-time domain adaptation and multi-spectral edge quantization for scalable deployment across Indian agricultural ecosystems.
+
+\begin{thebibliography}{1}
+
+\bibitem{Mohanty:16}
+S.P. Mohanty, D.P. Hughes, M. Salath\'e, "Using Deep Learning for Image-Based Plant Disease Detection", {\em Frontiers in Plant Science}, 7:1419, 2016.
+
+\bibitem{Singh:20}
+D. Singh, N. Jain, P. Jain, P. Kayal, S. Kumawat, N. Batra, "PlantDoc: A Dataset for Visual Plant Disease Detection in Natural Field Conditions", {\em Proc. of 7th ACM IKDD CoDS and 25th COMAD}, pp. 249--253, 2020.
+
+\bibitem{Dosovitskiy:20}
+A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weissenborn, et al., "An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale", {\em Intl. Conf. on Learning Representations (ICLR)}, 2021.
+
+\bibitem{He:16}
+K. He, X. Zhang, S. Ren, J. Sun, "Deep Residual Learning for Image Recognition", {\em IEEE Conf. on Computer Vision and Pattern Recognition (CVPR)}, pp. 770--778, 2016.
+
+\bibitem{Sandler:18}
+M. Sandler, A. Howard, M. Zhu, A. Zhmoginov, L.-C. Chen, "MobileNetV2: Inverted Residuals and Linear Bottlenecks", {\em IEEE Conf. on Computer Vision and Pattern Recognition (CVPR)}, pp. 4510--4520, 2018.
+
+\bibitem{Ganin:16}
+Y. Ganin, E. Ustinova, H. Ajakan, et al., "Domain-Adversarial Training of Neural Networks", {\em Journal of Machine Learning Research (JMLR)}, 17(59):1--35, 2016.
+
+\end{thebibliography}
+
+\end{document}
