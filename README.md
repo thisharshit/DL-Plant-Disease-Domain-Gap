@@ -74,6 +74,9 @@ DL/
 │   ├── evaluate.py       # Cross-domain evaluator, domain gap metric, and tables
 │   ├── bg_removal.py     # HSV leaf lesion segmentation and background masking
 │   └── few_shot_adapt.py # Few-shot target domain adaptation
+├── report/
+│   ├── DL_Project_P05_Report.pdf # Final Compiled Research Paper (PDF)
+│   └── Elcvia2e.tex              # LaTeX Research Report Source
 ├── report_template/
 │   └── Elcvia2e.tex      # LaTeX Research Report (ELCVIA Template)
 ├── requirements.txt      # Python dependencies
