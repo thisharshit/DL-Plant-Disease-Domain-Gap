@@ -9,7 +9,7 @@
 > **Team 5:**
 > - **Harshit Chaturvedi** (`harshitvijay2175@gmail.com`)
 > - **Ajay Jatav** (`jatavaj09@gmail.com`)
-> - **Harsh Chourasiyaa** (`harshchourasiya295@gmail.com`)
+> - **Harsh Chourasiya** (`harshchourasiya295@gmail.com`)
 
 ---
 
