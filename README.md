@@ -19,7 +19,7 @@
 | :--- | :--- | :--- |
 | **Harshit Chaturvedi** | Lead Architect & Modeling | • Project pipeline design & PyTorch model factory (`src/models.py`)<br>• Vision Transformer (ViT-B/16) and ResNet-50 integration<br>• Colab notebook orchestration & final paper write-up |
 | **Ajay Jatav** | Data Engineering & Preprocessing | • PlantVillage & PlantDoc dataset curation and class matching (`src/dataset.py`)<br>• 8-class cross-domain alignment dictionary<br>• Heavy field-simulating augmentation pipeline (color jitter, blur, cutouts) |
-| **Harsh Chourasiyaa** | Domain Adaptation & Analysis | • HSV color segmentation and background masking (`src/bg_removal.py`)<br>• Few-shot field fine-tuning experiments (`src/few_shot_adapt.py`)<br>• Cross-domain evaluation metrics, F1-scores, and benchmark synthesis (`src/evaluate.py`) |
+| **Harsh Chourasiya** | Domain Adaptation & Analysis | • HSV color segmentation and background masking (`src/bg_removal.py`)<br>• Few-shot field fine-tuning experiments (`src/few_shot_adapt.py`)<br>• Cross-domain evaluation metrics, F1-scores, and benchmark synthesis (`src/evaluate.py`) |
 
 ---
 
