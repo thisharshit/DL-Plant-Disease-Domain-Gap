@@ -64,14 +64,28 @@ class PlantDiseaseDataset(Dataset):
     Can be used for both Source Domain (PlantVillage) and Target Domain (PlantDoc).
     """
     def __init__(self, image_paths: List[str], labels: List[int], transform: Optional[Callable] = None):
+        # ---------------------------------------------------------------------
+        # VIVA / CONCEPTUAL NOTE: LAZY LOADING & MEMORY MANAGEMENT
+        # We store filepaths (strings) and integer labels in memory, NOT raw pixel arrays.
+        # Images are loaded lazily on-the-fly inside __getitem__(). This prevents
+        # Out-Of-Memory (OOM) crashes on large multi-gigabyte vision repositories.
+        # ---------------------------------------------------------------------
         self.image_paths = image_paths
         self.labels = labels
         self.transform = transform
 
     def __len__(self) -> int:
+        # Returns total number of samples; required by PyTorch DataLoader to compute epoch steps
         return len(self.image_paths)
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, int]:
+        # ---------------------------------------------------------------------
+        # Step-by-step sample retrieval:
+        # 1. Fetch image path by index
+        # 2. Open via PIL and convert to RGB: Ensures 3 channels (discards PNG alpha channels
+        #    and converts 1-channel grayscale images to uniform 3-channel tensors)
+        # 3. Apply augmentation/normalization pipeline
+        # ---------------------------------------------------------------------
         img_path = self.image_paths[idx]
         image = Image.open(img_path).convert("RGB")
         label = self.labels[idx]
@@ -86,9 +100,18 @@ def get_standard_transforms(img_size: int = 224, is_train: bool = True) -> trans
     """
     Baseline data augmentation and normalization.
     """
+    # -------------------------------------------------------------------------
+    # VIVA / CONCEPTUAL NOTE: IMAGENET NORMALIZATION
+    # Mean: [0.485, 0.456, 0.406], Std: [0.229, 0.224, 0.225].
+    # Why normalize? Pretrained weights (ResNet, ViT, MobileNet) were trained on
+    # normalized ImageNet distribution with zero mean and unit variance.
+    # Formula: x_norm = (x - mean) / std.
+    # This prevents vanishing/exploding gradients in early convolutional layers.
+    # -------------------------------------------------------------------------
     norm = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                 std=[0.229, 0.224, 0.225])
     if is_train:
+        # Standard training augmentations: modest horizontal/vertical flips
         return transforms.Compose([
             transforms.Resize((img_size, img_size)),
             transforms.RandomHorizontalFlip(p=0.5),
@@ -97,6 +120,7 @@ def get_standard_transforms(img_size: int = 224, is_train: bool = True) -> trans
             norm
         ])
     else:
+        # Validation/Test transform: deterministic resizing without random perturbation
         return transforms.Compose([
             transforms.Resize((img_size, img_size)),
             transforms.ToTensor(),
@@ -109,6 +133,17 @@ def get_heavy_augmentations(img_size: int = 224) -> transforms.Compose:
     Technique 1: Heavy Field-Simulating Data Augmentations.
     Simulates variations in outdoor natural sunlight, shadow, camera angle, and leaf occlusions.
     """
+    # -------------------------------------------------------------------------
+    # VIVA / CONCEPTUAL NOTE: SIMULATING COVARIATE SHIFT
+    # Why Heavy Augmentations? Models trained on PlantVillage overfit to uniform studio
+    # lighting and plain backgrounds. We synthesize natural field perturbations:
+    # 1. RandomResizedCrop(0.7, 1.0): Simulates framing variation and multi-scale symptoms.
+    # 2. ColorJitter(brightness=0.35, contrast=0.35, saturation=0.35, hue=0.15):
+    #    Simulates harsh Indian direct sunlight, specular highlights, and chromatic shifts.
+    # 3. GaussianBlur: Simulates smartphone motion blur and out-of-focus optics.
+    # 4. RandomErasing (Cutout): Erases random rectangular regions (p=0.3), forcing
+    #    the network to recognize distributed lesion patterns rather than a single shortcut.
+    # -------------------------------------------------------------------------
     norm = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                 std=[0.229, 0.224, 0.225])
     return transforms.Compose([
@@ -131,8 +166,39 @@ def collect_matched_data(root_dir: str, domain: str = "plantvillage", split: Opt
     domain: 'plantvillage' or 'plantdoc'
     split: optional 'train' or 'test' subdirectory filter to avoid data leakage
     """
+    # -------------------------------------------------------------------------
+    # VIVA / CONCEPTUAL NOTE: DATASET ALIGNMENT & SPLIT ISOLATION
+    # PlantVillage contains 38 classes; PlantDoc contains 27 classes.
+    # Only 8 classes share exact disease and botanical semantics across both.
+    # This function extracts ONLY the matched classes and enforces split isolation
+    # (train vs test) to guarantee ZERO data leakage during evaluation.
+    # -------------------------------------------------------------------------
     image_paths = []
     labels = []
+
+    target_dir = os.path.join(root_dir, split) if split and os.path.exists(os.path.join(root_dir, split)) else root_dir
+
+    for unified_class, mapping in COMMON_CLASSES_MAP.items():
+        sub_folder_name = mapping[domain]
+        class_idx = CLASS_TO_IDX[unified_class]
+
+        matched_folders = []
+        for dirpath, dirnames, _ in os.walk(target_dir):
+            for d in dirnames:
+                if sub_folder_name.lower() in d.lower():
+                    matched_folders.append(os.path.join(dirpath, d))
+
+        if not matched_folders:
+            continue
+
+        for folder in matched_folders:
+            for ext in ("*.jpg", "*.jpeg", "*.png", "*.JPG", "*.JPEG", "*.PNG"):
+                found_files = glob.glob(os.path.join(folder, ext))
+                for f in found_files:
+                    image_paths.append(f)
+                    labels.append(class_idx)
+
+    return image_paths, labels
 
     target_dir = os.path.join(root_dir, split) if split and os.path.exists(os.path.join(root_dir, split)) else root_dir
 

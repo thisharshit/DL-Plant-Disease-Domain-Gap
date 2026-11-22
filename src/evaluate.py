@@ -21,6 +21,18 @@ def evaluate_dataset(
     """
     Evaluates a model on a given dataloader and returns standard metrics.
     """
+    # -------------------------------------------------------------------------
+    # VIVA / CONCEPTUAL NOTE: MODEL INFERENCE MODE
+    # - Why model.eval()?
+    #   Toggles layers that behave differently during training vs inference:
+    #   1. Dropout: During training, neurons are randomly deactivated. In eval(),
+    #      dropout is disabled and full activation weights are used.
+    #   2. BatchNorm: During training, mean and variance are computed per batch.
+    #      In eval(), frozen running mean and running variance are used.
+    # - Why torch.no_grad()?
+    #   Disables the dynamic autograd computation graph. Drastically reduces GPU
+    #   memory usage and speeds up forward pass computation by ~2-3x.
+    # -------------------------------------------------------------------------
     model.eval()
     all_preds = []
     all_targets = []
@@ -28,7 +40,9 @@ def evaluate_dataset(
     with torch.no_grad():
         for images, targets in loader:
             images = images.to(device)
+            # Forward pass: compute unnormalized class logits
             outputs = model(images)
+            # Take argmax across class dimension to get predicted class index
             _, preds = outputs.max(1)
 
             all_preds.extend(preds.cpu().numpy())
@@ -37,6 +51,19 @@ def evaluate_dataset(
     all_preds = np.array(all_preds)
     all_targets = np.array(all_targets)
 
+    # -------------------------------------------------------------------------
+    # VIVA / CONCEPTUAL NOTE: EVALUATION METRICS EXPLAINED
+    # 1. Top-1 Accuracy: (Total Correct Predictions) / (Total Samples).
+    #    Can be misleading if test dataset classes are imbalanced!
+    # 2. Macro F1-Score: Macro-averaged harmonic mean of Precision and Recall:
+    #    F1_c = 2 * (P_c * R_c) / (P_c + R_c), Macro-F1 = (1/C) * sum(F1_c).
+    #    CRUCIAL FOR AGRICULTURE: Gives equal weight to every single crop disease class,
+    #    ensuring that high accuracy on a dominant class cannot mask poor detection
+    #    on a rare, economically devastating crop blight.
+    # 3. Precision vs Recall:
+    #    - Precision: Of all leaves flagged as disease X, what % actually have disease X? (Low false alarms)
+    #    - Recall: Of all actual infected leaves, what % did the model detect? (Low missed infections)
+    # -------------------------------------------------------------------------
     acc = accuracy_score(all_targets, all_preds) * 100.0
     macro_f1 = f1_score(all_targets, all_preds, average="macro", zero_division=0) * 100.0
     precision, recall, _, _ = precision_recall_fscore_support(all_targets, all_preds, average="macro", zero_division=0)
@@ -60,6 +87,18 @@ def compute_domain_gap(
     - Absolute Gap: InDomain_Acc - OutDomain_Acc
     - Retention Rate: (OutDomain_Acc / InDomain_Acc) * 100%
     """
+    # -------------------------------------------------------------------------
+    # VIVA / MATHEMATICAL DEFINITION: DOMAIN GAP & RETENTION RATE
+    # 1. Absolute Domain Gap (Delta):
+    #    Delta = Acc_in (PlantVillage) - Acc_out (PlantDoc)
+    #    Measures how many percentage points of diagnostic accuracy are lost
+    #    due to covariate shift (background clutter, sunlight, occlusions).
+    # 2. Retention Rate (rho):
+    #    rho = (Acc_out / Acc_in) * 100%
+    #    Quantifies what fraction of the laboratory capability survives
+    #    when deployed out-of-domain into real agricultural fields.
+    #    Example: 92.19% -> 24.32% gives retention rho = 26.4%.
+    # -------------------------------------------------------------------------
     in_acc = in_domain_metrics["accuracy"]
     out_acc = out_domain_metrics["accuracy"]
     gap = in_acc - out_acc
@@ -79,6 +118,7 @@ def generate_benchmark_table(experiments_results: Dict[str, Dict[str, float]]) -
     """
     Generates a clear academic cross-domain benchmark table.
     """
+    # Formats results dictionary into standard GitHub markdown table layout
     headers = [
         "Technique / Architecture",
         "In-Domain Acc (Lab %)",

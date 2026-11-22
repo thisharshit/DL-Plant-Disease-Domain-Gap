@@ -32,6 +32,18 @@ def train_one_epoch(
     optimizer: torch.optim.Optimizer,
     device: torch.device
 ) -> Tuple[float, float]:
+    # -------------------------------------------------------------------------
+    # VIVA / CONCEPTUAL NOTE: THE PYTORCH TRAINING LOOP MECHANICS
+    # 1. model.train(): Enables dropout (random unit deactivation) and batch
+    #    normalization running statistics calculation.
+    # 2. optimizer.zero_grad(): In PyTorch, gradients accumulate by default in .grad
+    #    buffers. Must clear previous batch gradients before backward pass.
+    # 3. loss = criterion(outputs, targets): Multi-Class Cross-Entropy Loss:
+    #    L = -log(exp(z_y) / sum_j exp(z_j)). Penalizes incorrect class probabilities.
+    # 4. loss.backward(): Executes Backpropagation via the chain rule to compute
+    #    partial derivatives dL/dw for all trainable weight matrices.
+    # 5. optimizer.step(): Updates weights according to the optimizer update equation.
+    # -------------------------------------------------------------------------
     model.train()
     running_loss = 0.0
     correct = 0
@@ -41,12 +53,18 @@ def train_one_epoch(
         images = images.to(device)
         targets = targets.to(device)
 
+        # Clear gradient buffers from previous iteration
         optimizer.zero_grad()
+        # Forward pass: compute predictions
         outputs = model(images)
+        # Compute scalar loss
         loss = criterion(outputs, targets)
+        # Backward pass: compute gradients dL/dw
         loss.backward()
+        # Parameter update step
         optimizer.step()
 
+        # Track cumulative loss and classification accuracy
         running_loss += loss.item() * images.size(0)
         _, preds = outputs.max(1)
         correct += preds.eq(targets).sum().item()
@@ -63,6 +81,11 @@ def validate(
     criterion: nn.Module,
     device: torch.device
 ) -> Tuple[float, float]:
+    # -------------------------------------------------------------------------
+    # VIVA / CONCEPTUAL NOTE: VALIDATION LOOP
+    # Evaluates generalization on unseen validation data without updating model weights.
+    # torch.no_grad() guarantees no computational graph is constructed.
+    # -------------------------------------------------------------------------
     model.eval()
     running_loss = 0.0
     correct = 0
@@ -98,6 +121,18 @@ def fit_model(
     """
     Complete training loop with learning rate scheduling and best-checkpoint saving.
     """
+    # -------------------------------------------------------------------------
+    # VIVA / CONCEPTUAL NOTE: OPTIMIZER & SCHEDULER SELECTION
+    # 1. AdamW (Adaptive Moment Estimation with Decoupled Weight Decay):
+    #    Maintains first moment (momentum) and second moment (adaptive learning rates
+    #    per parameter). Decoupled weight decay prevents weights from growing excessively
+    #    large, serving as an effective L2 regularizer.
+    # 2. CosineAnnealingLR:
+    #    Smoothly decays learning rate following a cosine curve:
+    #    eta_t = eta_min + 0.5 * (eta_max - eta_min) * (1 + cos(pi * t / T_max)).
+    #    Helps the model escape sharp local minima and settle into broad flat basins,
+    #    significantly improving out-of-distribution robustness.
+    # -------------------------------------------------------------------------
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -120,6 +155,7 @@ def fit_model(
         start_time = time.time()
         train_loss, train_acc = train_one_epoch(model, train_loader, criterion, optimizer, device)
         val_loss, val_acc = validate(model, val_loader, criterion, device)
+        # Advance learning rate scheduler by one epoch step
         scheduler.step()
 
         elapsed = time.time() - start_time
@@ -132,6 +168,11 @@ def fit_model(
               f"Train Loss: {train_loss:.4f}, Acc: {train_acc:.2f}% | "
               f"Val Loss: {val_loss:.4f}, Acc: {val_acc:.2f}%")
 
+        # ---------------------------------------------------------------------
+        # Best Model Checkpointing:
+        # Saves model.state_dict() (ordered dictionary of weight tensors)
+        # whenever validation accuracy reaches a new peak.
+        # ---------------------------------------------------------------------
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             os.makedirs(os.path.dirname(os.path.abspath(checkpoint_path)), exist_ok=True)
