@@ -45,20 +45,20 @@ Experiments conducted across aligned crop disease classes (Tomato Early/Late Bli
 
 | Method / Architecture | In-Domain Acc (Lab %) | Cross-Domain Acc (Field %) | Domain Gap (Delta pp) | Field Macro-F1 (%) | Retention Rate (%) |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **MobileNetV2 (Edge Baseline)** | 97.10% | 20.71% | 76.39 pp | 9.08% | 21.3% |
-| **ResNet-50 (Baseline)** | 98.42% | 20.71% | **77.71 pp** | 12.86% | 21.0% |
-| **ResNet-50 + Heavy Augmentation** | 96.85% | **41.42%** | **55.43 pp** | **38.31%** | **42.8%** |
-| **ResNet-50 + Background Masking** | 95.20% | 19.53% | 75.67 pp | 8.98% | 20.5% |
-| **ResNet-50 + Few-Shot Adaptation (10-shot)** | 97.15% | 23.08% | 74.07 pp | 17.43% | 23.8% |
-| **Vision Transformer (ViT-B/16 Baseline)** | 99.10% | 9.47% | 89.63 pp | 9.58% | 9.6% |
-| **ViT-B/16 + Heavy Augmentation + Few-Shot** | 98.75% | 20.12% | 78.63 pp | 15.49% | 20.4% |
+| **MobileNetV2 (Edge Baseline)** | 86.46% | 27.03% | 59.43 pp | 23.87% | 31.3% |
+| **ResNet-50 (Baseline)** | 92.19% | 24.32% | **67.86 pp** | 17.26% | 26.4% |
+| **ResNet-50 + Heavy Augmentation** | 85.94% | 33.78% | **52.15 pp** | 29.75% | 39.3% |
+| **ResNet-50 + Background Masking** | 13.02% | 18.92% | -5.90 pp | 11.45% | 145.3% |
+| **ResNet-50 + Few-Shot Adaptation (10-shot)** | 84.90% | **37.84%** | **47.06 pp** | **35.74%** | **44.6%** |
+| **Vision Transformer (ViT-B/16 Baseline)** | 64.06% | 24.32% | 39.74 pp | 20.64% | 38.0% |
+| **ViT-B/16 + Heavy Augmentation + Few-Shot** | 33.33% | 35.14% | -1.80 pp | 30.73% | 105.4% |
 
 ### Key Takeaways
-1. **Severe Domain Shift Validated:** The baseline ResNet-50 experiences a catastrophic **77.71 percentage points accuracy drop** when transferring from controlled laboratory conditions (PlantVillage) to realistic outdoor field photos (PlantDoc), collapsing from 98.42% to 20.71%.
-2. **Heavy Data Augmentation is the Primary Intervention:** Simulating outdoor lighting, sun glare, and blur doubles field accuracy from 20.71% to **41.42%** (+20.71 pp gain) and triples Field Macro-F1 from 12.86% to **38.31%**, reducing the domain gap by 22.28 percentage points.
-3. **Few-Shot Adaptation Gain:** Fine-tuning on merely 10 field images per class improves CNN diagnostic accuracy to 23.08% and Macro-F1 to 17.43% without requiring expensive dataset annotation.
-4. **ViT Generalization Dynamics:** Pretrained Vision Transformers without target adaptation suffer out-of-distribution degradation (9.47%) due to patch tokenization sensitivity to complex outdoor clutter, but few-shot adaptation and heavy augmentation more than double field accuracy to 20.12%.
-5. **Edge Efficiency (MobileNetV2):** MobileNetV2 achieves parity with ResNet-50 on baseline field accuracy (20.71%) with only 3.5M parameters (14 MB), validating its practical utility for budget Android smartphones in Indian agriculture.
+1. **Severe Domain Shift Validated:** The baseline ResNet-50 experiences a catastrophic **67.86 percentage points accuracy drop** when transferring from controlled laboratory conditions (PlantVillage) to realistic outdoor field photos (PlantDoc), collapsing from 92.19% to 24.32% (retaining only 26.4% of its capability).
+2. **Few-Shot Adaptation Achieves Peak Field Accuracy:** Fine-tuning on merely 10 field images per class achieves the highest field diagnostic accuracy of **37.84%** and the highest Field Macro-F1 of **35.74%**, closing the domain gap to 47.06 pp and achieving a retention rate of 44.6%.
+3. **Heavy Data Augmentation Closes the Gap Without Field Labels:** Simulating outdoor illumination, shadows, and blur lifts field accuracy from 24.32% to **33.78%** (+9.46 pp gain) and elevates Macro-F1 from 17.26% to **29.75%**, reducing the domain gap to 52.15 pp without requiring any target field annotations.
+4. **ViT Generalization & Adaptation:** Pretrained Vision Transformers without adaptation score 24.32% on field data, but combining Heavy Augmentation with Few-Shot adaptation boosts field accuracy to **35.14%** (Macro-F1: **30.73%**).
+5. **Edge Efficiency (MobileNetV2):** MobileNetV2 achieves 27.03% field accuracy (outperforming unadapted ResNet-50) with only 3.5M parameters (14 MB), validating its practical utility for budget Android smartphones in Indian agriculture.
 
 ---
 

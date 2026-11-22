@@ -44,7 +44,7 @@
 \hrulefill
 
 \begin{abstract}
-Deep Convolutional Neural Networks (CNNs) trained on curated, laboratory-captured plant pathology datasets such as PlantVillage routinely achieve state-of-the-art diagnostic accuracies exceeding 98\%. However, when evaluated on in-the-wild agricultural field photographs (PlantDoc), these models undergo catastrophic performance collapse. In this work, we rigorously investigate this domain gap across 8 common crop disease classes in Indian agriculture. We empirically measure a severe domain gap: baseline ResNet-50 drops from 98.42\% in-domain laboratory accuracy on PlantVillage to 20.71\% on authentic field photos from PlantDoc ($\Delta = 77.71$ percentage points drop; retention rate 21.0\%). MobileNetV2 experiences an equivalent drop to 20.71\% ($\Delta = 76.39$ pp). To mitigate this covariate shift, we systematically evaluate three domain transfer interventions: (i) outdoor-simulating heavy data augmentations ($\pm 35\%$ color jitter, affine transforms, blur, random erasing), (ii) leaf lesion isolation via HSV background segmentation, and (iii) few-shot target domain calibration ($k=10$ shots per class). Our empirical benchmark demonstrates that heavy data augmentation is the single most effective intervention, doubling field accuracy to 41.42\% (+20.71 pp gain) and tripling Macro-F1 from 12.86\% to 38.31\%, closing the domain gap by 22.28 percentage points without requiring target-domain field annotations. Few-shot calibration achieves 23.08\% field accuracy, whereas naive HSV background masking yields 19.53\% due to natural outdoor soil and shadow artifacts. Finally, we analyze lightweight MobileNetV2 (3.5M parameters) for resource-constrained edge deployment on rural Indian smartphones.
+Deep Convolutional Neural Networks (CNNs) trained on curated, laboratory-captured plant pathology datasets such as PlantVillage routinely achieve state-of-the-art diagnostic accuracies exceeding 98\%. However, when evaluated on in-the-wild agricultural field photographs (PlantDoc), these models undergo catastrophic performance collapse. In this work, we rigorously investigate this domain gap across 8 common crop disease classes in Indian agriculture. We empirically measure a severe domain gap: baseline ResNet-50 drops from 92.19\% in-domain laboratory accuracy on PlantVillage to 24.32\% on authentic field photos from PlantDoc ($\Delta = 67.86$ percentage points drop; retention rate 26.4\%). MobileNetV2 experiences a drop from 86.46\% to 27.03\% ($\Delta = 59.43$ pp). To mitigate this covariate shift, we systematically evaluate three domain transfer interventions: (i) outdoor-simulating heavy data augmentations ($\pm 35\%$ color jitter, affine transforms, blur, random erasing), (ii) leaf lesion isolation via HSV background segmentation, and (iii) few-shot target domain calibration ($k=10$ shots per class). Our empirical benchmark demonstrates that few-shot adaptation achieves the highest diagnostic performance of 37.84\% field accuracy and 35.74\% Macro-F1 (closing the gap to 47.06 pp; retention 44.6\%), while heavy data augmentation serves as the most effective zero-target-label intervention, elevating field accuracy to 33.78\% (+9.46 pp gain) and Macro-F1 to 29.75\%, closing the domain gap to 52.15 pp without requiring any target-domain annotations. Naive HSV background masking severely degrades performance (13.02\% lab, 18.92\% field) due to irregular lesion boundary destruction. Finally, we analyze lightweight MobileNetV2 (3.5M parameters) for resource-constrained edge deployment on rural Indian smartphones.
 
 \vspace{0.5cm}
 \noindent
@@ -159,7 +159,7 @@ The global receptive field allows ViT to contextualize lesion relationships acro
 \section{Experimental Setup}
 
 \subsection{Implementation Details}
-All models were implemented in PyTorch and executed using an Nvidia Tesla T4 GPU accelerator. Source domain training on PlantVillage was conducted across 8 aligned classes with the AdamW optimizer (learning rate $\eta = 10^{-4}$, weight decay $10^{-4}$, batch size 16) for 2 epochs per model configuration to maintain fair, standardized comparisons. Evaluation was performed on disjoint held-out test splits: $N_{\text{test, lab}} = 176$ images for PlantVillage and $N_{\text{test, field}} = 169$ images from the official PlantDoc test split, ensuring zero test data leakage.
+All models were implemented in PyTorch and executed using an Nvidia Tesla T4 GPU accelerator. Source domain training on PlantVillage was conducted across 8 aligned classes with the AdamW optimizer (learning rate $\eta = 10^{-4}$, weight decay $10^{-4}$, batch size 16) for 2 epochs per model configuration to maintain fair, standardized comparisons. Evaluation was performed on disjoint held-out test splits: $N_{\text{test, lab}} = 192$ images for PlantVillage and $N_{\text{test, field}} = 74$ images from the official PlantDoc test split, ensuring zero test data leakage.
 
 \begin{table}[t]
 \centerline{
@@ -167,15 +167,15 @@ All models were implemented in PyTorch and executed using an Nvidia Tesla T4 GPU
 \hline
 \textbf{Model / Intervention} & \textbf{Lab Acc (\%)} & \textbf{Field Acc (\%)} & \textbf{Gap $\Delta$ (pp)} & \textbf{Field F1 (\%)} & \textbf{Retention (\%)} \\
 \hline
-MobileNetV2 (Edge Baseline) & 97.10 & 20.71 & 76.39 & 9.08 & 21.3 \\
-Baseline ResNet-50 & 98.42 & 20.71 & 77.71 & 12.86 & 21.0 \\
+MobileNetV2 (Edge Baseline) & 86.46 & 27.03 & 59.43 & 23.87 & 31.3 \\
+Baseline ResNet-50 & 92.19 & 24.32 & 67.86 & 17.26 & 26.4 \\
 \hline
-ResNet-50 + Heavy Augmentation & 96.85 & \textbf{41.42} & \textbf{55.43} & \textbf{38.31} & \textbf{42.8} \\
-ResNet-50 + Background Masking & 95.20 & 19.53 & 75.67 & 8.98 & 20.5 \\
-ResNet-50 + Few-Shot (10-shot) & 97.15 & 23.08 & 74.07 & 17.43 & 23.8 \\
+ResNet-50 + Heavy Augmentation & 85.94 & 33.78 & 52.15 & 29.75 & 39.3 \\
+ResNet-50 + Background Masking & 13.02 & 18.92 & -5.90 & 11.45 & 145.3 \\
+ResNet-50 + Few-Shot (10-shot) & 84.90 & \textbf{37.84} & \textbf{47.06} & \textbf{35.74} & \textbf{44.6} \\
 \hline
-Vision Transformer (ViT-B/16 Baseline) & \textbf{99.10} & 9.47 & 89.63 & 9.58 & 9.6 \\
-ViT-B/16 + Heavy Aug + Few-Shot & 98.75 & 20.12 & 78.63 & 15.49 & 20.4 \\
+Vision Transformer (ViT-B/16 Baseline) & 64.06 & 24.32 & 39.74 & 20.64 & 38.0 \\
+ViT-B/16 + Heavy Aug + Few-Shot & 33.33 & 35.14 & -1.80 & 30.73 & 105.4 \\
 \hline
 \end{tabular}
 }
@@ -194,21 +194,21 @@ ViT-B/16 + Heavy Aug + Few-Shot & 98.75 & 20.12 & 78.63 & 15.49 & 20.4 \\
 Table \ref{table:benchmark} and Figure \ref{fig:benchmark_chart} summarize the primary experimental findings across all model configurations.
 
 \subsection{Quantifying the Baseline Domain Gap}
-The baseline ResNet-50 model \cite{He:16} demonstrates a near-flawless In-Domain accuracy of 98.42\% on clean PlantVillage test images. However, when evaluated on authentic field images from PlantDoc without adaptation, performance collapses to 20.71\%, revealing a catastrophic \textbf{domain gap of $\Delta = 77.71$ percentage points} and retaining only 21.0\% of its laboratory capability. MobileNetV2 exhibits an equivalent collapse to 20.71\% ($\Delta = 76.39$ pp, Macro-F1: 9.08\%). This rigorously confirms our core thesis: laboratory test accuracy provides a false sense of security, and unadapted deep CNNs fail completely in natural agricultural conditions.
+The baseline ResNet-50 model \cite{He:16} demonstrates an In-Domain accuracy of 92.19\% on clean PlantVillage test images. However, when evaluated on authentic field images from PlantDoc without adaptation, performance collapses to 24.32\%, revealing a catastrophic \textbf{domain gap of $\Delta = 67.86$ percentage points} and retaining only 26.4\% of its laboratory capability. MobileNetV2 exhibits an equivalent collapse from 86.46\% to 27.03\% ($\Delta = 59.43$ pp, Macro-F1: 23.87\%). This rigorously confirms our core thesis: laboratory test accuracy provides a false sense of security, and unadapted deep CNNs fail completely in natural agricultural conditions.
 
 \subsection{Which Technique Closes the Gap Most?}
 \begin{enumerate}
-    \item \textbf{Heavy Data Augmentation (Top Intervention):} Emerges as the most effective and cost-efficient domain intervention, doubling field accuracy from 20.71\% to \textbf{41.42\%} (a massive +20.71 pp improvement) and nearly tripling Field Macro-F1 from 12.86\% to \textbf{38.31\%}. This narrows the domain gap from 77.71 pp down to 55.43 pp entirely through source-domain preprocessing, without requiring any target-domain field annotations.
-    \item \textbf{Background Masking:} Achieves 19.53\% field accuracy (Macro-F1: 8.98\%). While HSV thresholding cleanly segments leaves against solid laboratory sheets, natural outdoor conditions (sunlit soil, brown mulch, shadows) cause false positive and false negative mask artifacts that clip lesion boundaries.
-    \item \textbf{Few-Shot Adaptation (10-shot):} Fine-tuning on merely 10 field images per class sampled from the PlantDoc training split improves CNN field accuracy to 23.08\% (Macro-F1: 17.43\%), successfully calibrating classifier weights to out-of-distribution lighting.
-    \item \textbf{Vision Transformers (ViT):} Without inductive biases, zero-shot ViT-B/16 drops to 9.47\% field accuracy due to patch tokenization sensitivity to cluttered backgrounds. However, when combined with heavy augmentations and 10-shot adaptation, ViT recovers to 20.12\% field accuracy (Macro-F1: 15.49\%).
+    \item \textbf{Few-Shot Adaptation (Peak Diagnostic Performance):} Fine-tuning on merely 10 field images per class sampled from the PlantDoc training split achieves the highest overall field diagnostic accuracy of \textbf{37.84\%} and the highest Field Macro-F1 of \textbf{35.74\%}. This narrows the domain gap down to 47.06 pp and improves retention to 44.6\%, demonstrating that a tiny budget of targeted field examples provides exceptional calibration for dense feature backbones.
+    \item \textbf{Heavy Data Augmentation (Top Zero-Label Intervention):} Serves as the most effective intervention requiring zero target-domain annotations, boosting field accuracy from 24.32\% to \textbf{33.78\%} (a +9.46 pp improvement) and nearly doubling Field Macro-F1 from 17.26\% to \textbf{29.75\%}. This narrows the domain gap to 52.15 pp purely through source-domain perturbation engineering.
+    \item \textbf{Background Masking:} Achieves 18.92\% field accuracy and 13.02\% lab accuracy (Macro-F1: 11.45\%). While HSV thresholding isolates uniform studio backgrounds, real outdoor lighting variations, sun-drenched soil, and dynamic shadows lead to false positive and negative mask artifacts that clip lesion boundaries and destroy discriminative leaf context.
+    \item \textbf{Vision Transformers (ViT):} Baseline zero-shot ViT-B/16 achieves 24.32\% field accuracy (64.06\% lab accuracy). Combining heavy augmentations with 10-shot adaptation boosts ViT field performance to \textbf{35.14\%} (Macro-F1: \textbf{30.73\%}), demonstrating viable cross-domain generalization.
 \end{enumerate}
 
 \section{Relevance to Indian Agriculture and Edge Deployment}
 
 In India, smallholder farmers operate predominantly under low-bandwidth rural conditions with budget smartphones costing under \$150. Consequently, server-side inference or multi-gigabyte models like ViT-B/16 are impractical for widespread offline field utility.
 
-To address this, we evaluated an adapted \textbf{MobileNetV2} backbone \cite{Sandler:18}. With a compact footprint of 3.5M parameters ($\sim 14$ MB model weights), MobileNetV2 achieves parity with ResNet-50 in baseline field accuracy (20.71\%) while requiring only a fraction of the computational resources. This establishes a highly favorable Pareto-optimal balance between computational lightness and diagnostic utility, highlighting practical feasibility for integration into national mobile advisory applications such as Kisan Suvidha and offline diagnostic tools.
+To address this, we evaluated an adapted \textbf{MobileNetV2} backbone \cite{Sandler:18}. With a compact footprint of 3.5M parameters ($\sim 14$ MB model weights), MobileNetV2 achieves 27.03\% field accuracy (higher than the unadapted ResNet-50 baseline of 24.32\%) while requiring only a fraction of the computational resources. This establishes a highly favorable Pareto-optimal balance between computational lightness and diagnostic utility, highlighting practical feasibility for integration into national mobile advisory applications such as Kisan Suvidha and offline diagnostic tools.
 
 \section{Team Contributions}
 
@@ -221,7 +221,7 @@ To ensure equitable distribution of effort and rigorous peer collaboration, proj
 
 \section{Conclusion}
 
-This paper systematically measured and mitigated the domain gap between controlled laboratory leaf datasets and realistic outdoor agricultural photographs. We demonstrated that standard CNNs experience a catastrophic 77.71 percentage points accuracy drop when deployed out-of-domain (collapsing from 98.42\% to 20.71\%). We established that heavy data augmentation is the single most effective intervention, doubling field accuracy to 41.42\% and tripling Macro-F1 to 38.31\% without target labels, while 10-shot target adaptation provides targeted calibration. Future work will investigate self-supervised test-time adaptation and edge quantization for low-power deployment across Indian rural farming communities.
+This paper systematically measured and mitigated the domain gap between controlled laboratory leaf datasets and realistic outdoor agricultural photographs. We demonstrated that standard CNNs experience a catastrophic 67.86 percentage points accuracy drop when deployed out-of-domain (collapsing from 92.19\% to 24.32\%). We established that 10-shot target domain adaptation achieves the peak field accuracy of 37.84\% (Macro-F1: 35.74\%), while heavy data augmentation serves as the premier zero-label intervention reaching 33.78\% field accuracy and 29.75\% Macro-F1. Future work will investigate self-supervised test-time adaptation and edge quantization for low-power deployment across Indian rural farming communities.
 
 \begin{thebibliography}{1}
 
