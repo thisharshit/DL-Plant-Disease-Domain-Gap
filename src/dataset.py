@@ -44,7 +44,7 @@ COMMON_CLASSES_MAP = {
         "plantdoc": "Potato leaf late blight"
     },
     "Bell_Pepper_Bacterial_Spot": {
-        "plantvillage": "Pepper__bell___Bacterial_spot",
+        "plantvillage": "Pepper,_bell___Bacterial_spot",
         "plantdoc": "Bell_pepper leaf spot"
     },
     "Apple_Scab": {
