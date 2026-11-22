@@ -77,8 +77,6 @@ DL/
 |-- report/
 |   |-- DL_Project_P05_Report.pdf # Final Compiled Research Paper (PDF)
 |   \-- Elcvia2e.tex              # LaTeX Research Report Source
-|-- report_template/
-|   \-- Elcvia2e.tex      # LaTeX Research Report (ELCVIA Template)
 |-- requirements.txt      # Python dependencies
 \-- README.md             # Project documentation
 ```

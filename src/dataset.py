@@ -15,7 +15,9 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 
-# 1-to-1 Class Mapping between PlantVillage (Lab) and PlantDoc (Field)
+# 1-to-1 Class Mapping across 8 Aligned Disease Classes:
+# Source Domain: PlantVillage (Laboratory)
+# Target Domain: PlantDoc (Real Field Conditions)
 COMMON_CLASSES_MAP = {
     "Tomato_Early_Blight": {
         "plantvillage": "Tomato___Early_blight",
@@ -48,20 +50,12 @@ COMMON_CLASSES_MAP = {
     "Apple_Scab": {
         "plantvillage": "Apple___Apple_scab",
         "plantdoc": "Apple Scab leaf"
-    },
-    "Corn_Rust": {
-        "plantvillage": "Corn_(maize)___Common_rust_",
-        "plantdoc": "Corn rust leaf"
-    },
-    "Grape_Black_Rot": {
-        "plantvillage": "Grape___Black_rot",
-        "plantdoc": "Grape leaf black rot"
     }
 }
 
 CLASS_NAMES = list(COMMON_CLASSES_MAP.keys())
 CLASS_TO_IDX = {name: i for i, name in enumerate(CLASS_NAMES)}
-NUM_CLASSES = len(CLASS_NAMES)
+NUM_CLASSES = len(CLASS_NAMES)  # Exactly 8 classes aligned across both domains
 
 
 class PlantDiseaseDataset(Dataset):
@@ -122,7 +116,7 @@ def get_heavy_augmentations(img_size: int = 224) -> transforms.Compose:
         transforms.RandomHorizontalFlip(p=0.5),
         transforms.RandomVerticalFlip(p=0.5),
         transforms.RandomRotation(degrees=30),
-        transforms.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.3, hue=0.15),
+        transforms.ColorJitter(brightness=0.35, contrast=0.35, saturation=0.35, hue=0.15),
         transforms.RandomAffine(degrees=15, translate=(0.1, 0.1), scale=(0.9, 1.1), shear=10),
         transforms.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 2.0)),
         transforms.ToTensor(),
@@ -131,13 +125,16 @@ def get_heavy_augmentations(img_size: int = 224) -> transforms.Compose:
     ])
 
 
-def collect_matched_data(root_dir: str, domain: str = "plantvillage") -> Tuple[List[str], List[int]]:
+def collect_matched_data(root_dir: str, domain: str = "plantvillage", split: Optional[str] = None) -> Tuple[List[str], List[int]]:
     """
-    Scans a dataset directory and filters only the common overlapping classes.
+    Scans a dataset directory and filters only the 8 common overlapping classes.
     domain: 'plantvillage' or 'plantdoc'
+    split: optional 'train' or 'test' subdirectory filter to avoid data leakage
     """
     image_paths = []
     labels = []
+
+    target_dir = os.path.join(root_dir, split) if split and os.path.exists(os.path.join(root_dir, split)) else root_dir
 
     for unified_class, mapping in COMMON_CLASSES_MAP.items():
         sub_folder_name = mapping[domain]
@@ -145,7 +142,7 @@ def collect_matched_data(root_dir: str, domain: str = "plantvillage") -> Tuple[L
 
         # Case-insensitive / partial folder search
         matched_folders = []
-        for dirpath, dirnames, _ in os.walk(root_dir):
+        for dirpath, dirnames, _ in os.walk(target_dir):
             for d in dirnames:
                 if sub_folder_name.lower() in d.lower():
                     matched_folders.append(os.path.join(dirpath, d))
@@ -171,13 +168,15 @@ def download_plantdoc_dataset(target_dir: str = "./data/plantdoc") -> str:
     zip_url = "https://github.com/pratikkayal/PlantDoc-Dataset/archive/refs/heads/master.zip"
     zip_path = os.path.join(target_dir, "plantdoc_repo.zip")
 
-    if not os.path.exists(os.path.join(target_dir, "PlantDoc-Dataset-master")):
+    dest_dir = os.path.join(target_dir, "PlantDoc-Dataset-master")
+    if not os.path.exists(dest_dir):
         print(f"Downloading PlantDoc dataset from {zip_url}...")
         urllib.request.urlretrieve(zip_url, zip_path)
         print("Extracting PlantDoc dataset...")
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(target_dir)
-        os.remove(zip_path)
+        if os.path.exists(zip_path):
+            os.remove(zip_path)
         print("PlantDoc ready!")
 
-    return os.path.join(target_dir, "PlantDoc-Dataset-master")
+    return dest_dir
