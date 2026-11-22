@@ -140,7 +140,6 @@ def collect_matched_data(root_dir: str, domain: str = "plantvillage", split: Opt
         sub_folder_name = mapping[domain]
         class_idx = CLASS_TO_IDX[unified_class]
 
-        # Case-insensitive / partial folder search
         matched_folders = []
         for dirpath, dirnames, _ in os.walk(target_dir):
             for d in dirnames:
@@ -177,6 +176,45 @@ def download_plantdoc_dataset(target_dir: str = "./data/plantdoc") -> str:
             zip_ref.extractall(target_dir)
         if os.path.exists(zip_path):
             os.remove(zip_path)
-        print("PlantDoc ready!")
+        print("[OK] PlantDoc ready!")
 
     return dest_dir
+
+
+def download_plantvillage_dataset(target_dir: str = "./data/plantvillage", max_images_per_class: int = 100) -> str:
+    """
+    Downloads authentic PlantVillage dataset (Mohanty et al., 2016)
+    and selectively extracts the 8 overlapping laboratory classes.
+    """
+    os.makedirs(target_dir, exist_ok=True)
+    zip_url = "https://github.com/spMohanty/PlantVillage-Dataset/archive/refs/heads/master.zip"
+    zip_path = os.path.join(target_dir, "plantvillage_master.zip")
+
+    # Check if all 8 class folders already exist
+    pv_classes = [m["plantvillage"] for m in COMMON_CLASSES_MAP.values()]
+    existing = [c for c in pv_classes if any(c.lower() in d.lower() for d in os.listdir(target_dir))]
+    if len(existing) == len(pv_classes):
+        print("[OK] PlantVillage clean laboratory dataset already available.")
+        return target_dir
+
+    dest_folder_base = target_dir
+    print("Downloading PlantVillage laboratory benchmark dataset from GitHub...")
+    urllib.request.urlretrieve(zip_url, zip_path)
+    print("Selectively extracting 8 aligned laboratory classes...")
+
+    with zipfile.ZipFile(zip_path, 'r') as z:
+        for member in z.namelist():
+            for cls in pv_classes:
+                if f"/color/{cls}/" in member and member.lower().endswith((".jpg", ".jpeg", ".png")):
+                    filename = os.path.basename(member)
+                    if filename:
+                        dest_folder = os.path.join(dest_folder_base, cls)
+                        os.makedirs(dest_folder, exist_ok=True)
+                        if len(os.listdir(dest_folder)) < max_images_per_class:
+                            with z.open(member) as src_file, open(os.path.join(dest_folder, filename), "wb") as dst_file:
+                                dst_file.write(src_file.read())
+
+    if os.path.exists(zip_path):
+        os.remove(zip_path)
+    print("[OK] PlantVillage 8-class laboratory dataset extracted successfully!")
+    return target_dir
