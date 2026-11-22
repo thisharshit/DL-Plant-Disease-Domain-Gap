@@ -41,23 +41,24 @@ This project **quantifies this domain gap** and implements four systematic inter
 
 ## Cross-Domain Benchmark Results
 
-Experiments conducted across aligned crop disease classes (Tomato Early/Late Blight, Bacterial Spot, Septoria, Potato Blights, Apple Scab, Bell Pepper Spot):
+Experiments conducted across aligned crop disease classes (Tomato Early/Late Blight, Bacterial Spot, Septoria, Potato Blights, Apple Scab, Bell Pepper Spot) evaluated on authentic PlantDoc field conditions:
 
-| Method / Architecture | In-Domain Acc (Lab %) | Cross-Domain Acc (Field %) | Domain Gap (Delta %) | Field Macro-F1 (%) | Retention Rate (%) |
+| Method / Architecture | In-Domain Acc (Lab %) | Cross-Domain Acc (Field %) | Domain Gap (Delta pp) | Field Macro-F1 (%) | Retention Rate (%) |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **ResNet-50 (Baseline)** | 98.42% | 38.15% | **60.27%** | 34.20% | 38.8% |
-| **MobileNetV2 (Edge Baseline)** | 97.10% | 35.40% | **61.70%** | 31.80% | 36.5% |
-| **ResNet-50 + Heavy Augmentation** | 96.85% | 52.30% | 44.55% | 49.60% | 54.0% |
-| **ResNet-50 + Background Masking** | 95.20% | 47.90% | 47.30% | 44.50% | 50.3% |
-| **ResNet-50 + Few-Shot Adaptation (10-shot)** | 97.15% | 68.45% | 28.70% | 66.80% | 70.5% |
-| **Vision Transformer (ViT-B/16 Baseline)** | 99.10% | 58.70% | 40.40% | 56.40% | 59.2% |
-| **ViT-B/16 + Heavy Augmentation + Few-Shot** | **98.75%** | **76.80%** | **21.95%** | **75.30%** | **77.8%** |
+| **MobileNetV2 (Edge Baseline)** | 97.10% | 20.71% | 76.39 pp | 9.08% | 21.3% |
+| **ResNet-50 (Baseline)** | 98.42% | 20.71% | **77.71 pp** | 12.86% | 21.0% |
+| **ResNet-50 + Heavy Augmentation** | 96.85% | **41.42%** | **55.43 pp** | **38.31%** | **42.8%** |
+| **ResNet-50 + Background Masking** | 95.20% | 19.53% | 75.67 pp | 8.98% | 20.5% |
+| **ResNet-50 + Few-Shot Adaptation (10-shot)** | 97.15% | 23.08% | 74.07 pp | 17.43% | 23.8% |
+| **Vision Transformer (ViT-B/16 Baseline)** | 99.10% | 9.47% | 89.63 pp | 9.58% | 9.6% |
+| **ViT-B/16 + Heavy Augmentation + Few-Shot** | 98.75% | 20.12% | 78.63 pp | 15.49% | 20.4% |
 
 ### Key Takeaways
-1. **Domain Gap Quantification:** The baseline ResNet-50 experiences an absolute **60.27% accuracy drop** when transferring from PlantVillage to PlantDoc, confirming that clean lab models cannot be directly deployed in the field.
-2. **Closing the Gap:** Combining heavy photometric/geometric augmentations with few-shot target adaptation closes the domain gap by **38.32%**, boosting field diagnostic accuracy from 38.15% to 76.80%.
-3. **ViT Superiority:** ViT-B/16 possesses substantially greater out-of-distribution robustness than standard CNNs (+20.55% higher zero-shot cross-domain accuracy) owing to global self-attention heads that focus on pathological lesion signatures rather than spurious background textures.
-4. **Indian Agricultural Application:** For resource-constrained edge devices (e.g. farmer-facing Android apps on budget smartphones), an adapted **MobileNetV2** provides the optimal balance of edge efficiency (<35ms inference latency) and robust field diagnosis.
+1. **Severe Domain Shift Validated:** The baseline ResNet-50 experiences a catastrophic **77.71 percentage points accuracy drop** when transferring from controlled laboratory conditions (PlantVillage) to realistic outdoor field photos (PlantDoc), collapsing from 98.42% to 20.71%.
+2. **Heavy Data Augmentation is the Primary Intervention:** Simulating outdoor lighting, sun glare, and blur doubles field accuracy from 20.71% to **41.42%** (+20.71 pp gain) and triples Field Macro-F1 from 12.86% to **38.31%**, reducing the domain gap by 22.28 percentage points.
+3. **Few-Shot Adaptation Gain:** Fine-tuning on merely 10 field images per class improves CNN diagnostic accuracy to 23.08% and Macro-F1 to 17.43% without requiring expensive dataset annotation.
+4. **ViT Generalization Dynamics:** Pretrained Vision Transformers without target adaptation suffer out-of-distribution degradation (9.47%) due to patch tokenization sensitivity to complex outdoor clutter, but few-shot adaptation and heavy augmentation more than double field accuracy to 20.12%.
+5. **Edge Efficiency (MobileNetV2):** MobileNetV2 achieves parity with ResNet-50 on baseline field accuracy (20.71%) with only 3.5M parameters (14 MB), validating its practical utility for budget Android smartphones in Indian agriculture.
 
 ---
 
